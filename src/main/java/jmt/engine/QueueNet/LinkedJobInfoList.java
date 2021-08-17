@@ -504,7 +504,7 @@ public class LinkedJobInfoList implements JobInfoList {
 
 	protected void updateAdd(JobInfo jobInfo) {
 		int c = jobInfo.getJob().getJobClass().getId();
-		updateQueueLength(jobInfo);
+		updateQueueLength(jobInfo, 0);
 		updateUtilization(jobInfo);
 		updateUtilizationJoin(jobInfo);
 		jobsIn++;
@@ -527,7 +527,7 @@ public class LinkedJobInfoList implements JobInfoList {
 	@Override
 	public void removeOnly(JobInfo jobInfo) {
 		int c = jobInfo.getJob().getJobClass().getId();
-		updateQueueLength(jobInfo);
+		updateQueueLength(jobInfo, 1);
 		updateUtilization(jobInfo);
 		updateUtilizationJoin(jobInfo);
 		updateThroughput(jobInfo);
@@ -598,7 +598,7 @@ public class LinkedJobInfoList implements JobInfoList {
 
 	protected void doRemove(JobInfo jobInfo, int position, int perClassPosition) {
 		int c = jobInfo.getJob().getJobClass().getId();
-		updateQueueLength(jobInfo);
+		updateQueueLength(jobInfo, 1);
 		updateResponseTime(jobInfo);
 		updateResidenceTime(jobInfo);
 		updateUtilization(jobInfo);
@@ -830,6 +830,20 @@ public class LinkedJobInfoList implements JobInfoList {
 		} else {
 			throughputPerSink = measurement;
 		}		
+	}
+
+	protected void updateQueueLength(JobInfo jobInfo, int action) {
+		if (queueLengthPerClass != null) {
+			JobClass jobClass = jobInfo.getJob().getJobClass();
+			int c = jobClass.getId();
+			Measure m = queueLengthPerClass[c];
+			if (m != null) {
+				m.update(listPerClass[c].size(), getTime() - getLastModifyTimePerClass(jobClass), action);
+			}
+		}
+		if (queueLength != null) {
+			queueLength.update(list.size(), getTime() - getLastModifyTime());
+		}
 	}
 
 	protected void updateQueueLength(JobInfo jobInfo) {

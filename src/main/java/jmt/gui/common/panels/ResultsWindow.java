@@ -350,14 +350,17 @@ public class ResultsWindow extends JMTFrame implements ResultsConstants {
 			this.md = md;
 			this.measureIndex = measureIndex;
 			values = md.getValues(measureIndex);
-			createPanel();
-			addListeners();
+			createPanel(sd.getState(sd.getMeasureKeys().get(measureIndex)));
+			addListeners(sd.getState(sd.getMeasureKeys().get(measureIndex)));
 		}
 
 		/**
 		 * Used to create the panel holding all measure's data
 		 */
-		protected void createPanel() {
+		protected void createPanel(String state) {
+			boolean isArrival = "Arrival".equalsIgnoreCase(state) ? true : false;
+			boolean isDeparture = "Departure".equalsIgnoreCase(state) ? true : false;
+
 			this.setLayout(new BorderLayout(7, 7));
 			this.setBorder(BorderFactory.createRaisedBevelBorder());
 			// Sets correct icon for this measure
@@ -483,12 +486,22 @@ public class ResultsWindow extends JMTFrame implements ResultsConstants {
 
 			// Temp mean and abort button are in a separate panel
 			JPanel bottomPanel = new JPanel(new BorderLayout(7, 7));
-			label = new JLabel(TEMP_MEAN);
+			if (!isArrival && !isDeparture)
+				label = new JLabel(TEMP_MEAN);
+			else if(isArrival)
+				label = new JLabel("Arrival");
+			else if(isDeparture)
+				label = new JLabel("Departure");
 			mean = new JTextField();
 			mean.setEditable(false);
-			mean.setToolTipText("Current mean value of this measure: " + mean.getText());
+
+			if (!isArrival && !isDeparture)
+				mean.setToolTipText("Current mean value of this measure: " + mean.getText());
 			label.setLabelFor(mean);
-			mean.setText(doubleToString((values.lastElement()).getMeanValue()));
+			if (!isArrival && !isDeparture)
+				mean.setText(doubleToString((values.lastElement()).getMeanValue()));
+			else
+				mean.setText(String.valueOf(lastValue.getArrival()));
 			bottomPanel.add(label, BorderLayout.WEST);
 			bottomPanel.add(mean, BorderLayout.CENTER);
 			bottomPanel.add(new JLabel("Warning"), BorderLayout.SOUTH);
@@ -613,7 +626,10 @@ public class ResultsWindow extends JMTFrame implements ResultsConstants {
 		/**
 		 * Adds listeners to this panel, to refresh measures and abort simulation
 		 */
-		protected void addListeners() {
+		protected void addListeners(String state) {
+			final boolean isArrival = "Arrival".equalsIgnoreCase(state) ? true : false;
+			final boolean isDeparture = "Departure".equalsIgnoreCase(state) ? true : false;
+
 			if (md.getMeasureState(measureIndex) == MeasureDefinition.MEASURE_IN_PROGRESS) {
 				md.setMalformedReplayerFileListener(new MeasureDefinition.MalformedReplayerFileListener() {
 					public void detectedError(String msg) {
@@ -645,8 +661,14 @@ public class ResultsWindow extends JMTFrame implements ResultsConstants {
 							upper.setText("-");
 						}
 
-						mean.setText(doubleToString(lastValue.getMeanValue()));
-						mean.setToolTipText("Current mean value of this measure: " + mean.getText());
+						if(!isArrival && !isDeparture) {
+							mean.setText(doubleToString(lastValue.getMeanValue()));
+							mean.setToolTipText("Current mean value of this measure: " + mean.getText());
+						} else if(isArrival) {
+							mean.setText(String.valueOf(lastValue.getArrival()));
+						} else if(isDeparture) {
+							mean.setText(String.valueOf(lastValue.getDeparture()));
+						}
 						samples.setText("" + md.getAnalyzedSamples(measureIndex));
 						samples.setToolTipText("Number of samples (observations) currently analyzed: " + samples.getText());
 						// If finished is true, state was changed

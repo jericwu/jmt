@@ -127,6 +127,9 @@ public class Measure {
 
 	protected double lastWeight;
 
+	protected int arrival;
+	protected int departure;
+
 	//-------end SCALE FACTOR FOR RESIDENCE TIME MEASURES------------//
 
 	/** Creates a new instance of measure class.
@@ -336,6 +339,14 @@ public class Measure {
 	 * @param weight sample weight.
 	 * @return True if the computation of this measure has been finished, false otherwise.
 	 */
+
+	public synchronized boolean update(double sample, double weight, int action) {
+		if(action == 0)
+			arrival = (int)sample;
+		else if(action == 1)
+			departure = (int)sample;
+		return update(sample, weight);
+	}
 
 	public synchronized boolean update(double sample, double weight) {
 		/*
@@ -664,4 +675,19 @@ public class Measure {
 		return simulationTime;
 	}
 
+	public int getArrival() {
+		return arrival;
+	}
+
+	public void setArrival(int arrival) {
+		this.arrival = arrival;
+	}
+
+	public int getDeparture() {
+		return departure;
+	}
+
+	public void setDeparture(int departure) {
+		this.departure = departure;
+	}
 }

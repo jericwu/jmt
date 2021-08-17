@@ -54,4 +54,12 @@ public interface MeasureValue {
 	 */
 	public double getSimTime();
 
+	public int getArrival();
+
+	public void setArrival(int arrival);
+
+	public int getDeparture();
+
+	public void setDeparture(int departure);
+
 }
