@@ -463,4 +463,8 @@ public interface SimulationDefinition {
 	 */
 	public void setSaveChanged();
 
+	public String getState(Object measureKey);
+
+	public void setState(String state, Object measureKey);
+
 }

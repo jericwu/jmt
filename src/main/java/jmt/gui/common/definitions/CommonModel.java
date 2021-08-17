@@ -2708,6 +2708,26 @@ public class CommonModel implements CommonConstants, ClassDefinition, StationDef
 	}
 
 	@Override
+	public String getState(Object measureKey) {
+		if (!measuresKeyset.contains(measureKey)) {
+			return null;
+		} else {
+			return measureDataHM.get(measureKey).state;
+		}
+	}
+
+	@Override
+	public void setState(String state, Object measureKey) {
+		if (measuresKeyset.contains(measureKey)) {
+			String oldState = measureDataHM.get(measureKey).state;
+			measureDataHM.get(measureKey).state = state;
+			if (oldState != null && !oldState.equalsIgnoreCase(state)) {
+				save = true;
+			}
+		}
+	}
+
+	@Override
 	public Double getMeasureAlpha(Object measureKey) {
 		if (!measuresKeyset.contains(measureKey)) {
 			return null;
@@ -4221,6 +4241,7 @@ public class CommonModel implements CommonConstants, ClassDefinition, StationDef
 		public Double precision;
 		public Double alpha;
 		public boolean log;
+		public String state;
 
 		public MeasureData(String type, Object stationKey, Object classKey, Double alpha, Double precision, boolean log) {
 			this.type = type;
