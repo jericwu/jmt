@@ -41,6 +41,7 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import com.google.gson.Gson;
 import jmt.common.xml.XSDSchemaLoader;
 import jmt.engine.NetStrategies.ImpatienceStrategies.*;
 import jmt.engine.log.JSimLogger;
@@ -70,6 +71,7 @@ import jmt.gui.common.serviceStrategies.ZeroStrategy;
 
 import org.apache.xerces.dom.CharacterDataImpl;
 import org.apache.xerces.parsers.DOMParser;
+import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -539,7 +541,7 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 	}
 
 	private static void parseAndSetImpatienceParameters(CommonModel model, Object stationKey,
-																											Map<String, Node> classNameToNodeMap) {
+														Map<String, Node> classNameToNodeMap) {
 		String[] classNames = getClassNamesFromMap(classNameToNodeMap);
 
 		// Sets the impatience strategy in the CommonModel. Implementation borrowed from parseServerSection().
@@ -598,7 +600,7 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 	}
 
 	private static void setImpatienceParameterAndType(CommonModel model, Object stationKey,
-																										Object classKey, ImpatienceParameter impatienceParameter, ImpatienceType impatienceType) {
+													  Object classKey, ImpatienceParameter impatienceParameter, ImpatienceType impatienceType) {
 		model.setImpatienceParameter(stationKey, classKey, impatienceParameter);
 		model.setImpatienceType(stationKey, classKey, impatienceType);
 	}
@@ -615,7 +617,7 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 		Map<String, Node> putStrategy = null;
 		Map<String, Node> dropRules = null;
 		Map<String, Node> retrialDistributions = null;
-        String pollingType = null;
+		String pollingType = null;
 		for (int i = 0; i < parameters.getLength(); i++) {
 			curr = (Element) parameters.item(i);
 			name = curr.getAttribute(XML_A_PARAMETER_NAME);
@@ -712,7 +714,7 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 		}
 
 		if (pollingType != null) {
-		    String getStrategy = pollingType.substring(pollingType.lastIndexOf(".") + 1);
+			String getStrategy = pollingType.substring(pollingType.lastIndexOf(".") + 1);
 			if (getStrategy.equals("LimitedPollingGetStrategy")) {
 				model.setStationQueueStrategy(key, STATION_QUEUE_STRATEGY_POLLING);
 				model.setStationPollingServerBoolean(key, true);
@@ -726,7 +728,7 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 				model.setStationPollingServerBoolean(key, true);
 				model.setStationPollingServerType(key, STATION_QUEUE_STRATEGY_POLLING_EXHAUSTIVE);
 			}
-	}
+		}
 
 		// Decodes drop rules
 		if (dropRules != null) {
@@ -1020,7 +1022,7 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 					}
 				}
 			} else if (rs instanceof PowerOfKRouting) {
-			    PowerOfKRouting strategy = (PowerOfKRouting) rs;
+				PowerOfKRouting strategy = (PowerOfKRouting) rs;
 				Node child = routing.get(className2).getFirstChild();
 				while (child.getNodeType() != Node.ELEMENT_NODE || !child.getNodeName().equals(XML_E_SUBPARAMETER)) {
 					child = child.getNextSibling();
@@ -1035,6 +1037,18 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 				values = ((Element) child).getElementsByTagName(XML_E_PARAMETER_VALUE);
 				Boolean withMemory = Boolean.valueOf(findText(values.item(0)));
 				strategy.setWithMemory(withMemory);
+			} else if (rs instanceof ClassSwitchRouting) {
+				ClassSwitchRouting strategy = (ClassSwitchRouting) rs;
+				Node child = routing.get(className2).getFirstChild();
+				while (child.getNodeType() != Node.ELEMENT_NODE || !child.getNodeName().equals(XML_E_SUBPARAMETER)) {
+					child = child.getNextSibling();
+				}
+				NodeList values = ((Element) child).getElementsByTagName(XML_E_PARAMETER_VALUE);
+				// TODO: read & write Map<Object, Map<Object, Double>>
+				Gson gson = new Gson();
+				Map<Object, Map<Object, Double>> outPaths = new HashMap<Object, Map<Object, Double>>();
+				outPaths = gson.fromJson(findText(values.item(0)), outPaths.getClass());
+				strategy.setOutPaths(outPaths);
 			} else if (rs instanceof WeightedRoundRobinRouting) {
 				Vector<Node> entries = new Vector<>();
 				Node entryArray = routing.get(className2).getFirstChild();
@@ -1078,7 +1092,7 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 			String classIn = i.next();
 			Object classInKey = model.getClassByName(classIn);
 			Element row = (Element) rows.get(classIn);
-			NodeList rowChild = row.getChildNodes(); 
+			NodeList rowChild = row.getChildNodes();
 			for (int j = 0; j < rowChild.getLength();j++) {
 				if (rowChild.item(j).getNodeType() == Node.TEXT_NODE ) {
 					continue;
@@ -1105,7 +1119,7 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 	/**
 	 * Parses all parameters for a Logger section from the XML document.
 	 * The information from parseLogger is passed to LogTunnel.
-	 * 
+	 *
 	 * @param section service section of logger station
 	 * @param model link to data structure
 	 * @param key key of search for this logger station into data structure
@@ -1174,7 +1188,7 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 			if (parameterName.equals("jobsPerLink")) {
 				model.setStationNumberOfServers(key, Integer.valueOf(findText(
 						parameter.getElementsByTagName(XML_E_PARAMETER_VALUE)
-						.item(0))));
+								.item(0))));
 			} else if (parameterName.equals("block")) {
 				model.setForkBlock(key, Integer.valueOf(findText(parameter
 						.getElementsByTagName(XML_E_PARAMETER_VALUE).item(0))));
@@ -1205,9 +1219,9 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 						if (className.equals(engineToGuiFork.get(
 								forkStratKey).getClassPath())) {
 							model.setForkStrategy(key, classes
-									.get(className2),
+											.get(className2),
 									engineToGuiFork.get(forkStratKey)
-									.clone());
+											.clone());
 						}
 					}
 
@@ -1220,7 +1234,7 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 								.getFirstChild();
 						while (entryArray.getNodeType() != Node.ELEMENT_NODE
 								|| !entryArray.getNodeName().equals(
-										XML_E_SUBPARAMETER)) {
+								XML_E_SUBPARAMETER)) {
 							entryArray = entryArray.getNextSibling();
 						}
 						// Now finds every outPaths
@@ -1245,14 +1259,14 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 							Node temp = entries.get(j).getFirstChild();
 							while (temp.getNodeType() != Node.ELEMENT_NODE
 									|| !temp.getNodeName().equals(
-											XML_E_SUBPARAMETER)) {
+									XML_E_SUBPARAMETER)) {
 								temp = temp.getNextSibling();
 							}
 							NodeList values = ((Element) temp)
 									.getElementsByTagName(XML_E_SUBPARAMETER);
 							String stationName = findText(((Element) values
 									.item(0)).getElementsByTagName(
-											XML_E_PARAMETER_VALUE).item(0));
+									XML_E_PARAMETER_VALUE).item(0));
 							Double probability = Double
 									.valueOf(findText(((Element) values.item(1))
 											.getElementsByTagName(
@@ -1262,7 +1276,7 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 							temp = temp.getNextSibling();
 							while (temp.getNodeType() != Node.ELEMENT_NODE
 									|| !temp.getNodeName().equals(
-											XML_E_SUBPARAMETER)) {
+									XML_E_SUBPARAMETER)) {
 								temp = temp.getNextSibling();
 							}
 							ArrayList<Node> probs = new ArrayList<Node>();
@@ -1288,11 +1302,11 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 								Integer num = Integer
 										.valueOf(findText(((Element) results
 												.item(0)).getElementsByTagName(
-														XML_E_PARAMETER_VALUE).item(0)));
+												XML_E_PARAMETER_VALUE).item(0)));
 								Double prob = Double
 										.valueOf(findText(((Element) results
 												.item(1)).getElementsByTagName(
-														XML_E_PARAMETER_VALUE).item(0)));
+												XML_E_PARAMETER_VALUE).item(0)));
 								tempMap.put(num, prob);
 							}
 							op.setOutParameters(tempMap);
@@ -1308,7 +1322,7 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 								.getFirstChild();
 						while (entryArray.getNodeType() != Node.ELEMENT_NODE
 								|| !entryArray.getNodeName().equals(
-										XML_E_SUBPARAMETER)) {
+								XML_E_SUBPARAMETER)) {
 							entryArray = entryArray.getNextSibling();
 						}
 						Node child = entryArray.getFirstChild();
@@ -1348,7 +1362,7 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 								.getFirstChild();
 						while (entryArray.getNodeType() != Node.ELEMENT_NODE
 								|| !entryArray.getNodeName().equals(
-										XML_E_SUBPARAMETER)) {
+								XML_E_SUBPARAMETER)) {
 							entryArray = entryArray.getNextSibling();
 						}
 						// Now finds every outPaths
@@ -1373,7 +1387,7 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 							Node temp = entries.get(j).getFirstChild();
 							while (temp.getNodeType() != Node.ELEMENT_NODE
 									|| !temp.getNodeName().equals(
-											XML_E_SUBPARAMETER)) {
+									XML_E_SUBPARAMETER)) {
 								temp = temp.getNextSibling();
 							}
 							String stationName = findText(((Element) temp)
@@ -1382,7 +1396,7 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 							temp = temp.getNextSibling();
 							while (temp.getNodeType() != Node.ELEMENT_NODE
 									|| !temp.getNodeName().equals(
-											XML_E_SUBPARAMETER)) {
+									XML_E_SUBPARAMETER)) {
 								temp = temp.getNextSibling();
 							}
 							ArrayList<Node> probs = new ArrayList<Node>();
@@ -1410,7 +1424,7 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 							temp = temp.getNextSibling();
 							while (temp.getNodeType() != Node.ELEMENT_NODE
 									|| !temp.getNodeName().equals(
-											XML_E_SUBPARAMETER)) {
+									XML_E_SUBPARAMETER)) {
 								temp = temp.getNextSibling();
 							}
 							probs = new ArrayList<Node>();
@@ -1459,7 +1473,7 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 	 * @param key key of search for this join station into data structure
 	 */
 	protected static void parseJoinSection(Element section, CommonModel model,
-			Object key) {
+										   Object key) {
 		Element parameter = (Element) section.getElementsByTagName(
 				XML_E_PARAMETER).item(0);
 		Map<String, Node> join = null;
@@ -1547,7 +1561,7 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 	 * @param key key of search for this semaphore station into data structure
 	 */
 	protected static void parseSemaphoreSection(Element section, CommonModel model,
-			Object key) {
+												Object key) {
 		Element parameter = (Element) section.getElementsByTagName(
 				XML_E_PARAMETER).item(0);
 		Map<String, Node> semaphore = null;
@@ -1984,11 +1998,11 @@ public class XMLReader implements XMLConstantNames, CommonConstants {
 			return STATION_TYPE_DELAY;
 		} else if (sectionNames[0].equals(CLASSNAME_QUEUE)
 				&& (sectionNames[1].equals(CLASSNAME_SERVER)
-						|| sectionNames[1].equals(CLASSNAME_PREEMPTIVESERVER)
-						|| sectionNames[1].equals(CLASSNAME_PSSERVER))
-						|| sectionNames[1].equals(CLASSNAME_EXHAUSTIVEPSERVER)
-						|| sectionNames[1].equals(CLASSNAME_LKPSERVER)
-						|| sectionNames[1].equals(CLASSNAME_GATEDPSERVER)
+				|| sectionNames[1].equals(CLASSNAME_PREEMPTIVESERVER)
+				|| sectionNames[1].equals(CLASSNAME_PSSERVER))
+				|| sectionNames[1].equals(CLASSNAME_EXHAUSTIVEPSERVER)
+				|| sectionNames[1].equals(CLASSNAME_LKPSERVER)
+				|| sectionNames[1].equals(CLASSNAME_GATEDPSERVER)
 				&& sectionNames[2].equals(CLASSNAME_ROUTER)) {
 			return STATION_TYPE_SERVER;
 		} else if (sectionNames[0].equals(CLASSNAME_QUEUE)
