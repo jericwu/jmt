@@ -726,6 +726,26 @@ public class PAResultsModel implements MeasureDefinition {
 			return 0;
 		}
 
+		@Override
+		public int getArrival() {
+			return 0;
+		}
+
+		@Override
+		public void setArrival(int arrival) {
+
+		}
+
+		@Override
+		public int getDeparture() {
+			return 0;
+		}
+
+		@Override
+		public void setDeparture(int departure) {
+
+		}
+
 	}
 
 	public void setMalformedReplayerFileListener(MalformedReplayerFileListener listener) {

@@ -588,6 +588,26 @@ public class StoredResultsModel implements MeasureDefinition {
 			return simTime;
 		}
 
+		@Override
+		public int getArrival() {
+			return 0;
+		}
+
+		@Override
+		public void setArrival(int arrival) {
+
+		}
+
+		@Override
+		public int getDeparture() {
+			return 0;
+		}
+
+		@Override
+		public void setDeparture(int departure) {
+
+		}
+
 	}
 
 	/**
